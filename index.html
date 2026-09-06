@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsThePotentialQuestions? — Study Smarter</title>
+    <meta name="description" content="Upload your study materials and get AI-generated quizzes. Master your lessons section by section with progressive quiz challenges.">
+
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>❓</text></svg>">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- App Styles -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- LANDING PAGE                                -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div id="landing" class="landing">
+        <div class="landing-bg">
+            <div class="floating-shape shape-1"></div>
+            <div class="floating-shape shape-2"></div>
+            <div class="floating-shape shape-3"></div>
+        </div>
+
+        <div class="landing-content">
+            <h1 class="landing-title">
+                <span class="title-gradient">WhatsThePotentialQuestions?</span>
+            </h1>
+            <p class="landing-subtitle">
+                Upload your study materials. Get AI-powered quizzes. Master every section.
+            </p>
+
+            <!-- Drop Zone -->
+            <div id="drop-zone" class="drop-zone">
+                <div class="drop-zone-content">
+                    <div class="drop-icon">
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                    </div>
+                    <p class="drop-title">Drag & drop your file here</p>
+                    <p class="drop-subtitle">or</p>
+                    <button id="browse-btn" class="btn-primary">
+                        <i class="fa-solid fa-folder-open"></i> Browse Files
+                    </button>
+                    <p class="drop-formats">Supports PDF, DOCX, TXT</p>
+                </div>
+                <input type="file" id="file-input" accept=".pdf,.docx,.txt" hidden>
+            </div>
+
+            <!-- How it works -->
+            <div class="how-it-works">
+                <h3>How it works</h3>
+                <div class="steps">
+                    <div class="step">
+                        <div class="step-icon">📄</div>
+                        <div class="step-text">
+                            <strong>Upload</strong>
+                            <span>Drop your lesson file</span>
+                        </div>
+                    </div>
+                    <div class="step-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+                    <div class="step">
+                        <div class="step-icon">🤖</div>
+                        <div class="step-text">
+                            <strong>AI Quiz</strong>
+                            <span>Questions auto-generated</span>
+                        </div>
+                    </div>
+                    <div class="step-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+                    <div class="step">
+                        <div class="step-icon">🏆</div>
+                        <div class="step-text">
+                            <strong>Master It</strong>
+                            <span>Perfect each section to advance</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- STUDY VIEW                                  -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div id="study-view" class="study-view hidden">
+
+        <!-- Top Bar -->
+        <div class="top-bar">
+            <button id="back-btn" class="btn-icon" title="Back to home">
+                <i class="fa-solid fa-arrow-left"></i>
+            </button>
+            <div class="top-bar-info">
+                <h2 id="doc-title" class="doc-title">Document</h2>
+                <div class="progress-bar-container">
+                    <div id="progress-bar-fill" class="progress-bar-fill" style="width: 0%"></div>
+                </div>
+                <span id="progress-text" class="progress-text">0/0 sections completed</span>
+            </div>
+        </div>
+
+        <div class="study-layout">
+            <!-- Sidebar -->
+            <aside id="sidebar" class="sidebar">
+                <h3 class="sidebar-title">
+                    <i class="fa-solid fa-list-check"></i> Sections
+                </h3>
+                <div id="section-list" class="section-list">
+                    <!-- Dynamically rendered -->
+                </div>
+            </aside>
+
+            <!-- Main Content -->
+            <main class="main-content">
+                <!-- Locked Message -->
+                <div id="locked-message" class="locked-message hidden">
+                    <div class="locked-icon">🔒</div>
+                    <h3>Section Locked</h3>
+                    <p>Complete the previous section with a perfect score to unlock this one.</p>
+                </div>
+
+                <!-- Quiz Area -->
+                <div id="quiz-area" class="quiz-area hidden">
+                    <div class="quiz-header">
+                        <h3 id="quiz-section-title" class="quiz-section-title">Section 1</h3>
+                        <p class="quiz-instruction">Answer all questions correctly to unlock the next section</p>
+                    </div>
+
+                    <!-- Questions Container -->
+                    <div id="questions-container" class="questions-container">
+                        <!-- Dynamically rendered -->
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button id="submit-quiz-btn" class="btn-primary btn-submit hidden">
+                        <i class="fa-solid fa-paper-plane"></i> Submit Answers
+                    </button>
+
+                    <!-- Score Display -->
+                    <div id="score-display" class="score-display hidden">
+                        <div class="score-circle">
+                            <span id="score-value" class="score-value">0/5</span>
+                        </div>
+                        <p id="score-message" class="score-message"></p>
+                    </div>
+
+                    <!-- Quiz Actions -->
+                    <div id="quiz-actions" class="quiz-actions hidden">
+                        <button id="retry-btn" class="btn-secondary btn-retry hidden">
+                            <i class="fa-solid fa-rotate-right"></i> Try Again
+                        </button>
+                        <button id="next-btn" class="btn-primary btn-next hidden">
+                            Next Section <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- LOADING OVERLAY                             -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div id="loading-overlay" class="loading-overlay hidden">
+        <div class="loading-content">
+            <div class="loading-spinner">
+                <div class="spinner-dot"></div>
+                <div class="spinner-dot"></div>
+                <div class="spinner-dot"></div>
+            </div>
+            <p id="loading-text" class="loading-text">Loading...</p>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- TOAST CONTAINER                             -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- SCRIPTS                                     -->
+    <!-- ═══════════════════════════════════════════ -->
+
+    <!-- Puter.js — Free AI API (no keys needed) -->
+    <script src="https://js.puter.com/v2/"></script>
+
+    <!-- PDF.js — Parse PDF files -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        // Set the PDF.js worker source
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
+
+    <!-- Mammoth.js — Parse DOCX files -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+
+    <!-- App Modules (order matters: dependencies first) -->
+    <script src="js/fileParser.js"></script>
+    <script src="js/quizEngine.js"></script>
+    <script src="js/progressTracker.js"></script>
+    <script src="js/app.js"></script>
+
+</body>
+</html>
