@@ -276,6 +276,24 @@
         await loadQuiz(index);
     }
 
+    async function regenerateQuiz() {
+        if (state.isLoading) return;
+        const sectionIndex = state.currentSectionIndex;
+        const docId = state.progressTracker.documentId;
+        const quizId = `${docId}_section_${sectionIndex}`;
+
+        // Clear cache for this section so it generates fresh questions
+        QuizEngine.clearSectionCache(quizId);
+
+        // Reset quiz state
+        state.userAnswers = {};
+        state.quizSubmitted = false;
+        state.currentQuiz = null;
+
+        showToast('🔄 Generating new questions...', 'info');
+        await loadQuiz(sectionIndex);
+    }
+
     async function loadQuiz(sectionIndex) {
         const section = state.sections[sectionIndex];
         showLoading('🤖 Generating quiz questions...');
@@ -307,6 +325,19 @@
         dom.submitBtn.classList.remove('hidden');
         dom.quizActions.classList.add('hidden');
         dom.scoreDisplay.classList.add('hidden');
+
+        // Add regenerate button at the top
+        const regenContainer = document.createElement('div');
+        regenContainer.className = 'regen-container';
+        regenContainer.innerHTML = `
+            <button class="btn-regen" id="regen-btn">
+                <i class="fa-solid fa-arrows-rotate"></i> Regenerate Questions
+            </button>
+        `;
+        dom.questionsContainer.appendChild(regenContainer);
+
+        // Bind regenerate button
+        document.getElementById('regen-btn').addEventListener('click', regenerateQuiz);
 
         quiz.forEach((q, qIndex) => {
             const card = document.createElement('div');

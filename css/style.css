@@ -1153,3 +1153,36 @@ body {
   background: linear-gradient(135deg, var(--error) 0%, #ff8e8e 100%);
   opacity: 0.3;
 }
+
+/* ── Regenerate button ── */
+.regen-container {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1.5rem;
+}
+
+.btn-regen {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.2rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  font-family: inherit;
+  color: var(--text-secondary);
+  background-color: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+}
+
+.btn-regen:hover {
+  color: var(--accent-primary);
+  border-color: var(--accent-primary);
+  background-color: rgba(102, 126, 234, 0.08);
+}
+
+.btn-regen:hover i {
+  animation: spin 0.6s ease;
+}

@@ -107,6 +107,8 @@
 Based on the following text section, generate exactly 5 multiple-choice questions.
 The wrong answers should be plausible but clearly incorrect.
 
+VERY IMPORTANT: The correct answer MUST be randomly distributed among A, B, C, and D. Do NOT make every correct answer "A". Vary the positions so roughly each letter gets at least one correct answer across the 5 questions. For example: question 1 correct=C, question 2 correct=A, question 3 correct=D, question 4 correct=B, question 5 correct=C.
+
 Text Section:
 ${sectionText}
 
@@ -121,10 +123,12 @@ The output MUST be an array of objects matching this exact structure:
       "C": "Option C text",
       "D": "Option D text"
     },
-    "correctAnswer": "A",
+    "correctAnswer": "B",
     "explanation": "Explanation of why this answer is correct and others are not."
   }
-]`;
+]
+
+Remember: RANDOMIZE which letter (A, B, C, or D) is correct for each question. Do NOT default to A.`;
 
         const aiResponseText = await callAIWithRetry(prompt);
         const quizData = extractJSON(aiResponseText);
@@ -133,9 +137,54 @@ The output MUST be an array of objects matching this exact structure:
             throw new Error("AI did not return a valid array of questions.");
         }
 
+        // Shuffle correct answer positions as a safety net in case AI still biases toward A
+        const shuffledQuiz = quizData.map(q => shuffleOptions(q));
+
         // Cache the successful result
-        localStorage.setItem(cacheKey, JSON.stringify(quizData));
-        return quizData;
+        localStorage.setItem(cacheKey, JSON.stringify(shuffledQuiz));
+        return shuffledQuiz;
+    }
+
+    /**
+     * Shuffles the options of a question so the correct answer isn't always in the same position.
+     * This is a safety net in case the AI still puts correct answers as "A".
+     */
+    function shuffleOptions(question) {
+        const entries = Object.entries(question.options);
+        const correctText = question.options[question.correctAnswer];
+
+        // Fisher-Yates shuffle
+        for (let i = entries.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [entries[i], entries[j]] = [entries[j], entries[i]];
+        }
+
+        // Rebuild options with original keys A, B, C, D but shuffled values
+        const keys = ['A', 'B', 'C', 'D'];
+        const newOptions = {};
+        let newCorrectAnswer = question.correctAnswer;
+
+        entries.forEach((entry, index) => {
+            newOptions[keys[index]] = entry[1];
+            if (entry[1] === correctText) {
+                newCorrectAnswer = keys[index];
+            }
+        });
+
+        return {
+            ...question,
+            options: newOptions,
+            correctAnswer: newCorrectAnswer
+        };
+    }
+
+    /**
+     * Clears the quiz cache for a specific section so it can be regenerated.
+     * @param {string} sectionId The section ID whose cache should be cleared.
+     */
+    function clearSectionCache(sectionId) {
+        const cacheKey = `quiz_cache_${sectionId}`;
+        localStorage.removeItem(cacheKey);
     }
 
     /**
@@ -157,7 +206,8 @@ The output MUST be an array of objects matching this exact structure:
     window.QuizEngine = {
         generateQuiz,
         extractJSON,
-        clearCache
+        clearCache,
+        clearSectionCache
     };
 
 })();
