@@ -152,9 +152,30 @@
 
                 <!-- Quiz Area -->
                 <div id="quiz-area" class="quiz-area hidden">
+                    <!-- Lesson / Study Material Section -->
+                    <div id="lesson-material-card" class="lesson-material-card">
+                        <div class="lesson-material-header">
+                            <div class="lesson-material-title-wrap">
+                                <span class="lesson-badge" id="lesson-badge">
+                                    <i class="fa-solid fa-book-open"></i> Lesson Material
+                                </span>
+                                <h3 id="lesson-material-title" class="lesson-material-title">Lesson 1</h3>
+                            </div>
+                            <button id="toggle-lesson-btn" class="btn-toggle-lesson" title="Toggle reading material">
+                                <i class="fa-solid fa-chevron-up" id="toggle-lesson-icon"></i> <span id="toggle-lesson-text">Collapse Material</span>
+                            </button>
+                        </div>
+                        <div id="lesson-material-body" class="lesson-material-body">
+                            <!-- Formatted content of only this section's lesson text -->
+                        </div>
+                    </div>
+
                     <div class="quiz-header">
+                        <div class="quiz-badge-wrap">
+                            <span class="quiz-count-badge"><i class="fa-solid fa-circle-question"></i> 15 Questions</span>
+                        </div>
                         <h3 id="quiz-section-title" class="quiz-section-title">Section 1</h3>
-                        <p class="quiz-instruction">Answer all questions correctly to unlock the next section</p>
+                        <p class="quiz-instruction">Answer all 15 questions correctly (15/15) to unlock the next section</p>
                     </div>
 
                     <!-- Questions Container -->
@@ -170,7 +191,7 @@
                     <!-- Score Display -->
                     <div id="score-display" class="score-display hidden">
                         <div class="score-circle">
-                            <span id="score-value" class="score-value">0/5</span>
+                            <span id="score-value" class="score-value">0/15</span>
                         </div>
                         <p id="score-message" class="score-message"></p>
                     </div>

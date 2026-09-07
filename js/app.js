@@ -14,7 +14,8 @@
         quizSubmitted: false,
         progressTracker: null,
         fileName: '',
-        isLoading: false
+        isLoading: false,
+        isLessonCollapsed: false
     };
 
     // ── DOM References (populated on init) ──
@@ -42,6 +43,15 @@
             progressBarFill: document.getElementById('progress-bar-fill'),
             progressText: document.getElementById('progress-text'),
             docTitle: document.getElementById('doc-title'),
+
+            // Lesson Study Material
+            lessonMaterialCard: document.getElementById('lesson-material-card'),
+            lessonBadge: document.getElementById('lesson-badge'),
+            lessonMaterialTitle: document.getElementById('lesson-material-title'),
+            lessonMaterialBody: document.getElementById('lesson-material-body'),
+            toggleLessonBtn: document.getElementById('toggle-lesson-btn'),
+            toggleLessonIcon: document.getElementById('toggle-lesson-icon'),
+            toggleLessonText: document.getElementById('toggle-lesson-text'),
 
             // Quiz area
             quizArea: document.getElementById('quiz-area'),
@@ -83,6 +93,11 @@
             dom.fileInput.click();
         });
         dom.fileInput.addEventListener('change', handleFileSelect);
+
+        // Lesson material toggle
+        if (dom.toggleLessonBtn) {
+            dom.toggleLessonBtn.addEventListener('click', toggleLessonMaterial);
+        }
 
         // Quiz actions
         dom.submitBtn.addEventListener('click', submitQuiz);
@@ -135,12 +150,12 @@
                 throw new Error('The document appears to be empty or has very little text content.');
             }
 
-            // Split into sections
-            showLoading('Splitting into study sections...');
-            state.sections = await FileParser.splitIntoSections(text, 4);
+            // Split into sections using intelligent Lesson -> Chapter -> Careful Document Reading hierarchy
+            showLoading('Analyzing lessons and chapters...');
+            state.sections = await FileParser.splitIntoSections(text);
 
             if (state.sections.length === 0) {
-                throw new Error('Could not split the document into sections.');
+                throw new Error('Could not identify sections or lessons in the document.');
             }
 
             // Initialize progress tracker
@@ -219,16 +234,22 @@
             if (status === 'unlocked') icon = '🔓';
             if (status === 'completed') icon = '✅';
 
-            let subtitle = '';
+            const displayTitle = section.shortTitle || `Section ${index + 1}`;
+            let subtitleHtml = '';
+            if (section.subtitle) {
+                subtitleHtml += `<span class="section-topic">${escapeHTML(section.subtitle)}</span>`;
+            }
             if (progress && progress.attempts > 0) {
-                subtitle = `<span class="section-subtitle">Best: ${progress.bestScore}/5 · ${progress.attempts} attempt${progress.attempts !== 1 ? 's' : ''}</span>`;
+                subtitleHtml += `<span class="section-subtitle">Best: ${progress.bestScore}/15 · ${progress.attempts} attempt${progress.attempts !== 1 ? 's' : ''}</span>`;
+            } else {
+                subtitleHtml += `<span class="section-subtitle">15 Questions</span>`;
             }
 
             item.innerHTML = `
                 <span class="section-icon">${icon}</span>
                 <div class="section-info">
-                    <span class="section-name">Section ${index + 1}</span>
-                    ${subtitle}
+                    <span class="section-name">${escapeHTML(displayTitle)}</span>
+                    ${subtitleHtml}
                 </div>
             `;
 
@@ -270,9 +291,27 @@
         dom.quizArea.classList.remove('hidden');
         dom.scoreDisplay.classList.add('hidden');
         dom.lockedMessage.classList.add('hidden');
-        dom.quizSectionTitle.textContent = `Section ${index + 1}`;
+        dom.quizSectionTitle.textContent = section.title || `Section ${index + 1}`;
 
-        // Generate quiz
+        // Render isolated lesson material for this section
+        if (dom.lessonMaterialCard) {
+            dom.lessonMaterialCard.classList.remove('hidden');
+            dom.lessonMaterialTitle.textContent = section.title || `Section ${index + 1}`;
+
+            let badgeIcon = 'fa-book-open';
+            let badgeLabel = 'Lesson Material';
+            if (section.type === 'chapter') {
+                badgeIcon = 'fa-bookmark';
+                badgeLabel = 'Chapter Material';
+            } else if (section.type !== 'lesson') {
+                badgeIcon = 'fa-file-lines';
+                badgeLabel = 'Study Section';
+            }
+            dom.lessonBadge.innerHTML = `<i class="fa-solid ${badgeIcon}"></i> ${badgeLabel}`;
+            renderLessonContent(section.text);
+        }
+
+        // Generate 15 quiz questions
         await loadQuiz(index);
     }
 
@@ -283,6 +322,7 @@
         const quizId = `${docId}_section_${sectionIndex}`;
 
         // Clear cache for this section so it generates fresh questions
+        QuizEngine.clearSectionCache(`${quizId}_q15`);
         QuizEngine.clearSectionCache(quizId);
 
         // Reset quiz state
@@ -290,18 +330,18 @@
         state.quizSubmitted = false;
         state.currentQuiz = null;
 
-        showToast('🔄 Generating new questions...', 'info');
+        showToast('🔄 Generating 15 new questions...', 'info');
         await loadQuiz(sectionIndex);
     }
 
     async function loadQuiz(sectionIndex) {
         const section = state.sections[sectionIndex];
-        showLoading('🤖 Generating quiz questions...');
+        showLoading('🤖 Generating 15 quiz questions...');
 
         try {
             const docId = state.progressTracker.documentId;
             const quizId = `${docId}_section_${sectionIndex}`;
-            const quiz = await QuizEngine.generateQuiz(section.text, quizId);
+            const quiz = await QuizEngine.generateQuiz(section.text, quizId, 15);
             state.currentQuiz = quiz;
             hideLoading();
             renderQuiz(quiz);
@@ -331,7 +371,7 @@
         regenContainer.className = 'regen-container';
         regenContainer.innerHTML = `
             <button class="btn-regen" id="regen-btn">
-                <i class="fa-solid fa-arrows-rotate"></i> Regenerate Questions
+                <i class="fa-solid fa-arrows-rotate"></i> Regenerate 15 Questions
             </button>
         `;
         dom.questionsContainer.appendChild(regenContainer);
@@ -342,7 +382,7 @@
         quiz.forEach((q, qIndex) => {
             const card = document.createElement('div');
             card.className = 'question-card';
-            card.style.animationDelay = `${qIndex * 0.1}s`;
+            card.style.animationDelay = `${qIndex * 0.05}s`;
 
             const optionsHTML = Object.entries(q.options).map(([key, value]) => `
                 <button class="option-btn" data-question="${qIndex}" data-option="${key}">
@@ -352,7 +392,7 @@
             `).join('');
 
             card.innerHTML = `
-                <div class="question-number">Question ${qIndex + 1}</div>
+                <div class="question-number">Question ${qIndex + 1} of ${quiz.length}</div>
                 <p class="question-text">${q.question}</p>
                 <div class="options-grid">
                     ${optionsHTML}
@@ -561,6 +601,51 @@
         }
 
         setTimeout(() => confettiContainer.remove(), 4000);
+    }
+
+    // ── Lesson Material Helpers ──
+    function toggleLessonMaterial() {
+        state.isLessonCollapsed = !state.isLessonCollapsed;
+        if (dom.lessonMaterialBody) {
+            if (state.isLessonCollapsed) {
+                dom.lessonMaterialBody.classList.add('collapsed');
+                if (dom.toggleLessonIcon) dom.toggleLessonIcon.className = 'fa-solid fa-chevron-down';
+                if (dom.toggleLessonText) dom.toggleLessonText.textContent = 'Expand Material';
+            } else {
+                dom.lessonMaterialBody.classList.remove('collapsed');
+                if (dom.toggleLessonIcon) dom.toggleLessonIcon.className = 'fa-solid fa-chevron-up';
+                if (dom.toggleLessonText) dom.toggleLessonText.textContent = 'Collapse Material';
+            }
+        }
+    }
+
+    function renderLessonContent(text) {
+        if (!dom.lessonMaterialBody) return;
+        if (!text || text.trim().length === 0) {
+            dom.lessonMaterialBody.innerHTML = '<p class="lesson-empty">No reading content available for this section.</p>';
+            return;
+        }
+
+        const paragraphs = text.split(/\n\n+/).map(p => p.trim()).filter(p => p.length > 0);
+        const html = paragraphs.map(p => {
+            if (p.startsWith('#')) {
+                const clean = p.replace(/^#+\s*/, '');
+                return `<h4 class="lesson-inner-heading">${escapeHTML(clean)}</h4>`;
+            }
+            return `<p class="lesson-para">${escapeHTML(p).replace(/\n/g, '<br>')}</p>`;
+        }).join('');
+
+        dom.lessonMaterialBody.innerHTML = html;
+    }
+
+    function escapeHTML(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
     }
 
     // ── Initialize on DOM ready ──

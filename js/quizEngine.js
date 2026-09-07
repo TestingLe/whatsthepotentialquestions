@@ -84,36 +84,46 @@
      * Generates a quiz based on the provided section text.
      * @param {string} sectionText The text content to generate a quiz for.
      * @param {string} sectionId A unique identifier for the section, used for caching.
+     * @param {number} questionCount The exact number of questions to generate (default: 15).
      * @returns {Promise<Array>} An array of quiz question objects.
      */
-    async function generateQuiz(sectionText, sectionId) {
+    async function generateQuiz(sectionText, sectionId, questionCount = 15) {
         if (!sectionText || !sectionId) {
             throw new Error("Section text and section ID are required.");
         }
 
-        const cacheKey = `quiz_cache_${sectionId}`;
+        const cacheKey = `quiz_cache_${sectionId}_q${questionCount}`;
         const cached = localStorage.getItem(cacheKey);
         
         if (cached) {
             try {
-                return JSON.parse(cached);
+                const parsed = JSON.parse(cached);
+                if (Array.isArray(parsed) && parsed.length === questionCount) {
+                    return parsed;
+                } else {
+                    localStorage.removeItem(cacheKey);
+                }
             } catch (e) {
                 console.warn('Invalid cache data found. Regenerating quiz.');
                 localStorage.removeItem(cacheKey);
             }
         }
 
-        const prompt = `You are an expert educator creating multiple-choice quiz questions to test reading comprehension, not just rote recall.
-Based on the following text section, generate exactly 5 multiple-choice questions.
+        const prompt = `You are an expert educator creating multiple-choice quiz questions to test reading comprehension, conceptual understanding, and retention.
+Based strictly on the following text section, generate EXACTLY ${questionCount} multiple-choice questions (numbered 1 to ${questionCount}).
 The wrong answers should be plausible but clearly incorrect.
 
-VERY IMPORTANT: The correct answer MUST be randomly distributed among A, B, C, and D. Do NOT make every correct answer "A". Vary the positions so roughly each letter gets at least one correct answer across the 5 questions. For example: question 1 correct=C, question 2 correct=A, question 3 correct=D, question 4 correct=B, question 5 correct=C.
+VERY IMPORTANT REQUIREMENTS:
+1. You MUST output an array containing EXACTLY ${questionCount} question objects. Not fewer, not more.
+2. The questions must cover different parts, key facts, definitions, and concepts of this text section.
+3. The correct answer MUST be evenly distributed among options A, B, C, and D. Do NOT bias toward A. Approximately 3-4 questions should have A as correct, 3-4 B, 3-4 C, and 3-4 D.
+4. Provide a clear, educational explanation for each question confirming why the correct answer is right according to the text.
 
 Text Section:
 ${sectionText}
 
-Return ONLY valid JSON (no markdown fences, no extra text).
-The output MUST be an array of objects matching this exact structure:
+Return ONLY valid JSON (no markdown fences, no conversational text).
+The output MUST be an array of ${questionCount} objects matching this exact structure:
 [
   {
     "question": "Question text here?",
@@ -124,23 +134,32 @@ The output MUST be an array of objects matching this exact structure:
       "D": "Option D text"
     },
     "correctAnswer": "B",
-    "explanation": "Explanation of why this answer is correct and others are not."
+    "explanation": "Explanation of why this answer is correct based on the text."
   }
-]
+]`;
 
-Remember: RANDOMIZE which letter (A, B, C, or D) is correct for each question. Do NOT default to A.`;
-
-        let quizData;
+        let quizData = [];
         try {
             const aiResponseText = await callAIWithRetry(prompt);
-            quizData = extractJSON(aiResponseText);
+            const parsed = extractJSON(aiResponseText);
 
-            if (!Array.isArray(quizData) || quizData.length === 0) {
+            if (Array.isArray(parsed) && parsed.length > 0) {
+                quizData = parsed;
+            } else {
                 throw new Error("AI did not return a valid array of questions.");
             }
         } catch (err) {
-            console.warn('AI quiz generation failed, using synthesizer fallback:', err);
-            quizData = synthesizeFallbackQuiz(sectionText);
+            console.warn('AI quiz generation failed or incomplete, using synthesizer fallback:', err);
+            quizData = synthesizeFallbackQuiz(sectionText, questionCount);
+        }
+
+        // Enforce exact question count
+        if (quizData.length > questionCount) {
+            quizData = quizData.slice(0, questionCount);
+        } else if (quizData.length < questionCount) {
+            const needed = questionCount - quizData.length;
+            const extraQuestions = synthesizeFallbackQuiz(sectionText, needed);
+            quizData = quizData.concat(extraQuestions);
         }
 
         // Shuffle correct answer positions as a safety net in case AI still biases toward A
@@ -152,41 +171,65 @@ Remember: RANDOMIZE which letter (A, B, C, or D) is correct for each question. D
     }
 
     /**
-     * Synthesizes 5 educational multiple-choice questions from section text
-     * when external AI service is unreachable.
+     * Synthesizes exactly `targetCount` educational multiple-choice questions from section text
+     * when external AI service is unreachable or returns fewer than requested questions.
+     * @param {string} text
+     * @param {number} targetCount (default: 15)
+     * @returns {Array}
      */
-    function synthesizeFallbackQuiz(text) {
-        const sentences = text
-            .split(/(?<=[.?!])\s+/)
-            .map(s => s.trim())
-            .filter(s => s.length > 25 && s.length < 180);
+    function synthesizeFallbackQuiz(text, targetCount = 15) {
+        // Clean sentences
+        const rawSentences = text
+            .split(/(?<=[.?!])\s+|\n+/)
+            .map(s => s.trim().replace(/^[\d#\.\-*\s]+/, ''))
+            .filter(s => s.length > 20 && s.length < 250);
 
-        const sampleSentences = sentences.slice(0, 5);
-        while (sampleSentences.length < 5) {
-            sampleSentences.push("The fundamental principles outlined in this section serve as the foundation for mastery.");
+        // Deduplicate
+        const uniqueSentences = Array.from(new Set(rawSentences));
+
+        const sampleSentences = [];
+        for (let i = 0; i < targetCount; i++) {
+            if (i < uniqueSentences.length) {
+                sampleSentences.push(uniqueSentences[i]);
+            } else if (uniqueSentences.length > 0) {
+                // Cycle with variation
+                sampleSentences.push(uniqueSentences[i % uniqueSentences.length]);
+            } else {
+                sampleSentences.push(`The principles and core concepts detailed in this section form the foundation of this study material.`);
+            }
         }
 
         const letters = ['A', 'B', 'C', 'D'];
-        return sampleSentences.map((sentence, idx) => {
-            const correctIndex = (idx * 2 + 1) % 4;
+        const questionStyles = [
+            (w) => `According to this section, what is the primary significance of "${w}..."?`,
+            (w) => `Based on the provided lesson text, which statement best characterizes: "${w}..."?`,
+            (w) => `In the context of this section, what can be accurately inferred about "${w}..."?`,
+            (w) => `Which of the following correctly describes the role or concept of "${w}..."?`,
+            (w) => `How does the text explain the relationship involving: "${w}..."?`
+        ];
+
+        return sampleSentences.slice(0, targetCount).map((sentence, idx) => {
+            const correctIndex = (idx * 3 + 1) % 4;
             const correctLetter = letters[correctIndex];
 
-            const words = sentence.split(/\s+/).slice(0, 8).join(' ');
+            const words = sentence.split(/\s+/).slice(0, 7).join(' ');
+            const promptBuilder = questionStyles[idx % questionStyles.length];
+
             const options = {
-                A: `It represents a secondary phenomenon with negligible impact on outcomes.`,
-                B: `It establishes that ${words.toLowerCase()}... is central to the topic.`,
-                C: `It is an outdated hypothesis disproven by modern empirical models.`,
-                D: `It only applies under extreme laboratory circumstances.`
+                A: `It represents a secondary factor with negligible relevance to the central topic.`,
+                B: `It establishes that "${words.toLowerCase()}..." constitutes a foundational element.`,
+                C: `It is an invalidated assumption contradicted by the primary text.`,
+                D: `It only functions as a temporary condition under specialized circumstances.`
             };
 
-            // Ensure the correct letter has the accurate statement
-            options[correctLetter] = `It demonstrates how "${words}..." operates within this framework.`;
+            // Ensure the correct letter contains the accurate affirmative statement
+            options[correctLetter] = `It demonstrates how "${words}..." is established and applied in this lesson.`;
 
             return {
-                question: `Based on this section, which of the following statements is most accurate regarding: "${words}..."?`,
+                question: promptBuilder(words),
                 options,
                 correctAnswer: correctLetter,
-                explanation: `The text specifically highlights that "${sentence}". This confirms that ${correctLetter} is the correct understanding.`
+                explanation: `The text explicitly states: "${sentence}". This confirms that option ${correctLetter} is the correct understanding.`
             };
         });
     }
