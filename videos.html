@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WhatsThePotentialQuestions? — Document Study</title>
-    <meta name="description" content="Upload your study materials (PDF, DOCX, TXT) and get AI-generated quizzes. Master your lessons section by section with progressive quiz challenges.">
+    <title>Video Quizzes — WhatsThePotentialQuestions?</title>
+    <meta name="description" content="Paste any YouTube or video link to generate interactive AI study quizzes with embedded video playback and progressive section unlocking.">
 
     <!-- Favicon -->
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>❓</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>">
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -32,11 +32,11 @@
                 <span class="brand-text">WhatsThePotentialQuestions?</span>
             </a>
             <nav class="nav-links">
-                <a href="index.html" class="nav-item active" id="nav-docs">
+                <a href="index.html" class="nav-item" id="nav-docs">
                     <i class="fa-solid fa-file-lines"></i>
                     <span>Documents</span>
                 </a>
-                <a href="videos.html" class="nav-item" id="nav-videos">
+                <a href="videos.html" class="nav-item active" id="nav-videos">
                     <i class="fa-brands fa-youtube" style="color: #ff5252;"></i>
                     <span>Video Quizzes</span>
                     <span class="nav-badge">NEW</span>
@@ -46,7 +46,7 @@
     </header>
 
     <!-- ═══════════════════════════════════════════ -->
-    <!-- LANDING PAGE (DOCUMENTS)                    -->
+    <!-- LANDING PAGE (VIDEOS)                       -->
     <!-- ═══════════════════════════════════════════ -->
     <div id="landing" class="landing">
         <div class="landing-bg">
@@ -56,105 +56,164 @@
         </div>
 
         <div class="landing-content">
-            <h1 class="landing-title">
-                <span class="title-gradient">Master Any Document</span>
-            </h1>
-            <p class="landing-subtitle">
-                Upload your study materials (PDF, DOCX, TXT) and get AI-powered progressive quizzes. Complete each section with 100% to unlock the next!
-            </p>
-
-            <!-- Drop Zone for Documents -->
-            <div id="drop-zone" class="drop-zone">
-                <div class="drop-zone-content">
-                    <div class="drop-icon">
-                        <i class="fa-solid fa-cloud-arrow-up"></i>
-                    </div>
-                    <p class="drop-title">Drag & drop your file here</p>
-                    <p class="drop-subtitle">or</p>
-                    <button id="browse-btn" class="btn-primary">
-                        <i class="fa-solid fa-folder-open"></i> Browse Files
-                    </button>
-                    <p class="drop-formats">Supports PDF, DOCX, TXT files</p>
+            <!-- Hero section -->
+            <div class="video-hero">
+                <div class="video-badge">
+                    <i class="fa-brands fa-youtube"></i> Interactive Video Learning
                 </div>
-                <input type="file" id="file-input" accept=".pdf,.docx,.txt" hidden>
+                <h1 class="landing-title">
+                    <span class="title-gradient">Turn Videos into Quizzes</span>
+                </h1>
+                <p class="landing-subtitle">
+                    Paste any YouTube lesson or educational video. Watch alongside progressive AI-generated quizzes and master each chapter!
+                </p>
+            </div>
+
+            <!-- Video Input Card -->
+            <div class="video-card">
+                <div class="video-input-group">
+                    <div class="video-url-input-wrap">
+                        <i class="fa-brands fa-youtube" style="color: #ff5252;"></i>
+                        <input type="url" id="video-url-input" class="video-url-input" 
+                               placeholder="Paste YouTube link (e.g. https://www.youtube.com/watch?v=...)" 
+                               autocomplete="off">
+                    </div>
+                    <button id="video-submit-btn" class="btn-primary video-submit-btn">
+                        <i class="fa-solid fa-bolt"></i> Generate Quiz
+                    </button>
+                </div>
+
+                <div class="video-input-footer">
+                    <span>Supports YouTube URLs, Shorts, and direct video links</span>
+                    <button id="manual-toggle-btn" class="btn-text-link" type="button">
+                        <i class="fa-solid fa-keyboard"></i> Paste transcript / notes instead
+                    </button>
+                </div>
+
+                <!-- Manual Transcript Fallback (collapsible) -->
+                <div id="manual-transcript-box" class="manual-transcript-box hidden">
+                    <label for="manual-text-input" style="font-size: 0.85rem; font-weight: 600; color: var(--text-primary); display: block;">
+                        <i class="fa-solid fa-file-lines" style="color: var(--accent-primary);"></i> Video Transcript or Lecture Notes:
+                    </label>
+                    <textarea id="manual-text-input" class="manual-text-input" rows="6" 
+                              placeholder="Paste the video transcript or detailed lecture notes here..."></textarea>
+                    <div style="display: flex; justify-content: flex-end;">
+                        <button id="manual-submit-btn" class="btn-primary" style="font-size: 0.88rem; padding: 0.6rem 1.2rem;">
+                            <i class="fa-solid fa-paper-plane"></i> Process Transcript
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Educational Presets -->
+            <div class="presets-section">
+                <div class="section-tagline">
+                    <i class="fa-solid fa-sparkles" style="color: #ffd700;"></i> Try One-Click Educational Presets
+                </div>
+                <div id="presets-container" class="presets-grid">
+                    <!-- Populated dynamically via videoApp.js -->
+                </div>
+            </div>
+
+            <!-- Recent Video Quizzes -->
+            <div id="recent-section" class="recent-section hidden">
+                <div class="section-tagline">
+                    <i class="fa-solid fa-clock-rotate-left"></i> Recently Practiced Videos
+                </div>
+                <div id="recent-list" class="recent-grid">
+                    <!-- Populated dynamically -->
+                </div>
             </div>
 
             <!-- How it works -->
             <div class="how-it-works">
-                <h3>How it works</h3>
+                <h3>How Video Study Works</h3>
                 <div class="steps">
                     <div class="step">
-                        <div class="step-icon">📄</div>
+                        <div class="step-icon">🎬</div>
                         <div class="step-text">
-                            <strong>Upload</strong>
-                            <span>Drop your lesson file</span>
+                            <strong>Paste URL</strong>
+                            <span>YouTube or video link</span>
                         </div>
                     </div>
                     <div class="step-arrow"><i class="fa-solid fa-arrow-right"></i></div>
                     <div class="step">
-                        <div class="step-icon">🤖</div>
+                        <div class="step-icon">📺</div>
                         <div class="step-text">
-                            <strong>AI Quiz</strong>
-                            <span>Questions auto-generated</span>
+                            <strong>Watch & Learn</strong>
+                            <span>Embedded player alongside</span>
                         </div>
                     </div>
                     <div class="step-arrow"><i class="fa-solid fa-arrow-right"></i></div>
                     <div class="step">
                         <div class="step-icon">🏆</div>
                         <div class="step-text">
-                            <strong>Master It</strong>
-                            <span>100% required to advance</span>
+                            <strong>Master Sections</strong>
+                            <span>Score 100% to unlock next</span>
                         </div>
                     </div>
                 </div>
             </div>
+
         </div>
     </div>
 
     <!-- ═══════════════════════════════════════════ -->
-    <!-- STUDY VIEW                                  -->
+    <!-- STUDY VIEW (SPLIT SCREEN WITH VIDEO)        -->
     <!-- ═══════════════════════════════════════════ -->
     <div id="study-view" class="study-view hidden">
 
         <!-- Top Bar -->
         <div class="top-bar">
-            <button id="back-btn" class="btn-icon" title="Back to document upload">
+            <button id="back-btn" class="btn-icon" title="Back to video search">
                 <i class="fa-solid fa-arrow-left"></i>
             </button>
             <div class="top-bar-info">
-                <h2 id="doc-title" class="doc-title">Document</h2>
+                <h2 id="video-title-el" class="doc-title">Video Lesson</h2>
                 <div class="progress-bar-container">
                     <div id="progress-bar-fill" class="progress-bar-fill" style="width: 0%"></div>
                 </div>
-                <span id="progress-text" class="progress-text">0/0 sections completed</span>
+                <span id="progress-text" class="progress-text">0/0 sections mastered</span>
             </div>
         </div>
 
-        <div class="study-layout">
-            <!-- Sidebar -->
-            <aside id="sidebar" class="sidebar">
-                <h3 class="sidebar-title">
-                    <i class="fa-solid fa-list-check"></i> Sections
-                </h3>
-                <div id="section-list" class="section-list">
-                    <!-- Dynamically rendered -->
-                </div>
-            </aside>
+        <div class="study-layout video-study-container">
 
-            <!-- Main Content -->
-            <main class="main-content">
+            <!-- Left Pane: Video Player & Meta -->
+            <div class="video-left-pane">
+                <div id="video-frame-wrapper" class="video-frame-wrapper">
+                    <!-- Embedded iframe or video tag -->
+                </div>
+                <div class="video-meta-bar">
+                    <h3 id="video-meta-title" class="video-page-title">Interactive Video Lecture</h3>
+                    <p id="video-meta-el" class="video-page-author">Educational Video</p>
+                </div>
+
+                <!-- Sections Sidebar list in Left Pane for easy access -->
+                <aside id="sidebar" class="sidebar" style="width: 100%; border: none; background: transparent; padding: 0;">
+                    <h3 class="sidebar-title">
+                        <i class="fa-solid fa-list-check"></i> Study Sections
+                    </h3>
+                    <div id="section-list" class="section-list">
+                        <!-- Dynamically rendered -->
+                    </div>
+                </aside>
+            </div>
+
+            <!-- Right Pane: Active Quiz & Questions -->
+            <main class="main-content video-right-pane">
                 <!-- Locked Message -->
                 <div id="locked-message" class="locked-message hidden">
                     <div class="locked-icon">🔒</div>
                     <h3>Section Locked</h3>
-                    <p>Complete the previous section with a perfect score to unlock this one.</p>
+                    <p>Complete the previous section with a perfect score (100%) to unlock this section.</p>
                 </div>
 
                 <!-- Quiz Area -->
                 <div id="quiz-area" class="quiz-area hidden">
                     <div class="quiz-header">
                         <h3 id="quiz-section-title" class="quiz-section-title">Section 1</h3>
-                        <p class="quiz-instruction">Answer all questions correctly to unlock the next section</p>
+                        <p class="quiz-instruction">Watch the video section and answer all questions correctly to unlock the next chapter</p>
                     </div>
 
                     <!-- Questions Container -->
@@ -186,6 +245,7 @@
                     </div>
                 </div>
             </main>
+
         </div>
     </div>
 
@@ -199,7 +259,7 @@
                 <div class="spinner-dot"></div>
                 <div class="spinner-dot"></div>
             </div>
-            <p id="loading-text" class="loading-text">Loading...</p>
+            <p id="loading-text" class="loading-text">Generating study quiz...</p>
         </div>
     </div>
 
@@ -212,24 +272,14 @@
     <!-- SCRIPTS                                     -->
     <!-- ═══════════════════════════════════════════ -->
 
-    <!-- Puter.js — Free AI API (no keys needed) -->
+    <!-- Puter.js — Free AI API -->
     <script src="https://js.puter.com/v2/"></script>
 
-    <!-- PDF.js — Parse PDF files -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <script>
-        // Set the PDF.js worker source
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-    </script>
-
-    <!-- Mammoth.js — Parse DOCX files -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
-
     <!-- App Modules -->
-    <script src="js/fileParser.js"></script>
+    <script src="js/videoParser.js"></script>
     <script src="js/quizEngine.js"></script>
     <script src="js/progressTracker.js"></script>
-    <script src="js/app.js"></script>
+    <script src="js/videoApp.js"></script>
 
 </body>
 </html>
